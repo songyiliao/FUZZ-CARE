@@ -1,21 +1,20 @@
-function [theta, U, center, obj_fcn] = FKCM_kernelfcm(X,y, cluster_n, options)
+function [theta, U, center, obj_fcn] = FUZZCARE_kernelfcm(X,y, cluster_n, options)
 %
-for i=1 % parameters and setting
 if nargin ~= 3 & nargin ~= 4
 	error('Too many or too few input arguments!');
 end
 
-data = [X y]; %only consider features into clustering
+data = [X y];
 
-data_n = size(data, 1);     %example size
-in_n = size(X, 2);       %feature size
+data_n = size(data, 1);   
+in_n = size(X, 2);      
 if data_n<in_n
     data = data';
     data_n = size(data, 1);
     in_n = size(data, 2);
 end
 
-% Change the following to set default options
+
 default_options = [0.01;   % learning ratio
         0.5;  % lambda2
         1;	% lambda
@@ -43,18 +42,17 @@ max_iter = options(4);		% Max. iteration
 min_impro = options(5);		% Min. improvement
 display = options(6);		% Display info or not
 
-obj_fcn = zeros(max_iter, 2);	% Array for objective function
-U = initfcm( cluster_n,data_n); U=U';			% Initial fuzzy partition
+obj_fcn = zeros(max_iter, 2);	
+U = initfcm( cluster_n,data_n); U=U';			
 end 
 % Main loop
-X = [ones(data_n,1) X];                       % X is used to compute theta, but data is used for FCM part
-center = zeros(cluster_n, in_n+1);            %K*In_n matrix
-theta = zeros(in_n+1,cluster_n);              %K*In_n matrix
+X = [ones(data_n,1) X];                      
+center = zeros(cluster_n, in_n+1);            
+theta = zeros(in_n+1,cluster_n);              
 CostIncreaseIndex = 0;
 for o = 1:max_iter
-    % update center (K*In_n)
-    mf = U'.^2;       % MF matrix after exponential modification
-%     center = mf*data./(sum(mf,2)*ones(1,in_n+1)); %new center K*In_n
+
+    mf = U'.^2;       
     for k = 1:cluster_n
         center(k,:) = mf(k,:).*(KernelFunction(data,ones(data_n,1)*center(k,:)))'*data/...
             (mf(k,:)*(KernelFunction(data,ones(data_n,1)*center(k,:))));
@@ -105,7 +103,7 @@ for o = 1:max_iter
     end
 
 end
-iter_n = o;	% Actual number of iterations
+iter_n = o;	
 obj_fcn = obj_fcn/data_n;
 obj_fcn(iter_n+1:max_iter,:) = [];
 end
