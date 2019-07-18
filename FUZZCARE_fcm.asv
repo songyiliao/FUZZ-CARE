@@ -1,4 +1,5 @@
 function [theta, U, center, obj_fcn] = FUZZCARE_fcm(X,y, cluster_n, options)
+for i=1 % parameters and setting
 if nargin ~= 3 & nargin ~= 4
 	error('Too many or too few input arguments!');
 end
@@ -36,30 +37,31 @@ else
 end
 alpha = options(1);
 lambda2 = options(2);
-lambda = options(3);
-max_iter = options(4);		
-min_impro = options(5);		
-display = options(6);		
+lambda = options(3);% Lambda1
+max_iter = options(4);		% Max. iteration
+min_impro = options(5);		% Min. improvement
+display = options(6);		% Display info or not
 
 
-obj_fcn = zeros(max_iter, 2);	
-U = initfcm( cluster_n,data_n); U=U';			
-
+obj_fcn = zeros(max_iter, 2);	% Array for objective function
+U = initfcm( cluster_n,data_n); U=U';			% Initial fuzzy partition
+end 
 % Main loop
 X = [ones(data_n,1) X];                    
 center = zeros(cluster_n, in_n+1);            
 theta = zeros(in_n+1,cluster_n);              
 for o = 1:max_iter
-
-    mf = U'.^2;       
-    center = mf*data./(sum(mf,2)*ones(1,in_n+1)); 
-  
+    % update center (K*In_n)
+    mf = U'.^2;       % MF matrix after exponential modification
+    center = mf*data./(sum(mf,2)*ones(1,in_n+1)); %new center K*In_n
+    % update theta  (In_n*K)    
     for k = 1:cluster_n
-        U_kx = U(:,k)*ones(1,in_n+1).*X;   
-
+        U_kx = U(:,k)*ones(1,in_n+1).*X;    % generate U_kx
+% -----------------use GD to update theta------------------------
         theta(:,k) = theta(:,k)+2*alpha/(data_n)*(U_kx'*(y-sum(U_kx*theta,2))+lambda2*theta(:,k));
     end
-
+% -----------------end GD---------------------------------------            
+    % update U     (dat_n*In_n)
     for k = 1:cluster_n
         norm_XC(:,k) = sum((data - ones(data_n,1)*center(k,:)).^2,2);
     end
@@ -68,17 +70,17 @@ for o = 1:max_iter
     ita = ita_fz./ita_fm;
     U_fz = 2*y*ones(1,cluster_n).*(X*theta) - repmat(ita,1,cluster_n);
     U_fm = 2*( (X*theta).^2 + lambda*norm_XC );
-
+    % do not update ith row of U if U_fz(i,:) contains negtive values
     Update_row = find(min(U_fz,[],2)>0);
     U(Update_row,:) = U_fz(Update_row,:)./U_fm(Update_row,:);
-
+    % compute loss function
     obj_fcn(o,1) = sum(sum((X*theta.*U-y*ones(1,cluster_n)).^2));
-
+%     obj_fcn(o,2) = 0;
     for k = 1:cluster_n
         obj_fcn(o,2) = obj_fcn(o,2)+ sum((mf(k,:))'.* sum((data - repmat(center(k,:),data_n,1)).^2,2));
     end
 end
-iter_n = o;	
+iter_n = o;	% Actual number of iterations
 obj_fcn = obj_fcn/data_n;
 obj_fcn(iter_n+1:max_iter,:) = [];
 end
