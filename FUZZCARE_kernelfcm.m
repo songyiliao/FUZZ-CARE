@@ -44,7 +44,7 @@ display = options(6);		% Display info or not
 
 obj_fcn = zeros(max_iter, 2);	
 U = initfcm( cluster_n,data_n); U=U';			
-end 
+
 % Main loop
 X = [ones(data_n,1) X];                      
 center = zeros(cluster_n, in_n+1);            
